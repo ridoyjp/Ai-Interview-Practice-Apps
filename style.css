@@ -25,3 +25,5 @@ h1{font-size:22px;margin:0 0 12px;color:#111}
 .actions{margin-top:28px}
 .actions .primary{font-size:16px;padding:15px 36px}
 @media(max-width:750px){body{padding:0 10px 22px}.panel{padding:22px 17px}.stage{grid-template-columns:1fr}.avatar-area{height:320px;min-height:320px}.avatar{width:260px;height:278px}.video{width:192px;height:136px}.top button{padding:12px 17px}.mic-row{margin-bottom:14px}}
+
+.sound-help{display:block;margin:12px auto;background:#e8f2ff;color:#114a92;border:1px solid #8ab6ed;padding:12px 16px;border-radius:12px;font-weight:700;cursor:pointer}.sound-help[hidden]{display:none}
