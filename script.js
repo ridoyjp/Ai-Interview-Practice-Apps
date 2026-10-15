@@ -38,7 +38,7 @@ function speak(){
   if(japanese.length)u.voice=japanese.find(v=>v.localService)||japanese[0];
   u.onstart=()=>{if(token!==voiceToken)return;speaking=true;$('avatar').classList.add('speaking');$('avatarState').textContent='質問を読み上げています';$('soundHelp').hidden=true};
   const done=()=>{if(token!==voiceToken)return;speaking=false;$('avatar').classList.remove('speaking');$('avatarState').textContent='AI Interviewer';activeUtterance=null};
-  u.onend=done;u.onerror=e=>{done();$('soundHelp').hidden=false;message('音声を再生できません。🔊「音声を再生」を押してください。')};
+  u.onend=()=>{done();if(token===voiceToken && !$('interview').classList.contains('hidden'))begin()};u.onerror=e=>{done();$('soundHelp').hidden=false;message('音声を再生できません。🔊「音声を再生」を押してください。')};
   try{window.speechSynthesis.speak(u);window.speechSynthesis.resume();}catch(e){done();$('soundHelp').hidden=false}
   // Some mobile engines silently block background speech; provide manual replay.
   $('soundHelp').hidden=false;
@@ -51,7 +51,7 @@ function begin(){if(listening)return;listening=true;$('micStatus').textContent='
 function save(){answers[index]=$('answer').value.trim();finalText=answers[index]}
 function nextQuestion(){save();stopClock();stopListening();stopSpeech();if(index<questions.length-1){index++;showQuestion();speak()}else showResults()}
 function showResults(){stopClock();$('interview').classList.add('hidden');$('results').classList.remove('hidden');$('resultList').replaceChildren();questions.forEach((q,i)=>{let div=document.createElement('div');div.className='result-item';let h=document.createElement('h3');h.textContent=`${i+1}. ${q}`;let p=document.createElement('p');p.textContent=answers[i]||'（回答なし）';div.append(h,p);$('resultList').append(div)})}
-$('repeat').onclick=speak;$('soundHelp').onclick=speak;$('start').classList.remove('hidden');$('stop').classList.remove('hidden');$('start').onclick=()=>{stopSpeech();begin()};$('stop').onclick=()=>{save();stopListening();message('音声入力を停止しました。タイマーは進んでいます。')};$('next').onclick=nextQuestion;$('answer').addEventListener('input',()=>{finalText=$('answer').value;answers[index]=finalText});$('duration').onchange=()=>{remaining=Number($('duration').value);updateClock();startClock()};
+$('repeat').onclick=speak;$('soundHelp').onclick=speak;$('next').onclick=nextQuestion;$('answer').addEventListener('input',()=>{finalText=$('answer').value;answers[index]=finalText});$('duration').onchange=()=>{remaining=Number($('duration').value);updateClock();startClock()};
 $('cameraQuick').onclick=()=> $('cameraBtn').click();$('cameraBtn').onclick=async()=>{if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;$('camera').srcObject=null;$('cameraBtn').textContent='📷 カメラをオン';return}try{stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});$('camera').srcObject=stream;$('cameraBtn').textContent='📷 カメラをオフ'}catch(e){message('カメラにアクセスできません。HTTPS または localhost で開き、カメラを許可してください。')}};
 $('export').onclick=()=>{let content=questions.map((q,i)=>`${i+1}. ${q}\n${answers[i]||'（回答なし）'}`).join('\n\n');let blob=new Blob(['\ufeff'+content],{type:'text/plain;charset=utf-8'});let url=URL.createObjectURL(blob);let a=document.createElement('a');a.href=url;a.download='interview-answers.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
 $('restart').onclick=()=>{index=0;answers=Array(15).fill('');$('results').classList.add('hidden');$('interview').classList.remove('hidden');showQuestion();speak()};window.addEventListener('beforeunload',()=>{stopSpeech();if(stream)stream.getTracks().forEach(t=>t.stop())});
