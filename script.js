@@ -1,4 +1,3 @@
-
 const questions=[
 '自己紹介をお願いします。',
 'これまでの経験の中で、最も力を入れて取り組んだことを教えてください。',
@@ -16,43 +15,38 @@ const questions=[
 'ストレスやプレッシャーへの対処法を教えてください。',
 '最後に、何か質問や伝えておきたいことがあればお願いします。'
 ];
-const $=id=>document.getElementById(id);let index=0,answers=Array(15).fill(''),remaining=60,tick=null,recognition=null,listening=false,stream=null,finalText='',interimText='',speaking=false;
-const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-function message(s){$('notice').textContent=s}
-function stopClock(){clearInterval(tick);tick=null}
-function updateClock(){$('timer').textContent=`残り：${remaining}秒`;$('timer').classList.toggle('low',remaining<=10)}
-// Cross-device Japanese text-to-speech: starts from a user gesture and retains
-// the utterance to avoid premature garbage collection in mobile browsers.
-let activeUtterance=null, voiceList=[], voiceToken=0;
-function refreshVoices(){if('speechSynthesis' in window) voiceList=window.speechSynthesis.getVoices()||[]}
-if('speechSynthesis' in window){refreshVoices();window.speechSynthesis.addEventListener?.('voiceschanged',refreshVoices)}
-function stopSpeech(){voiceToken++;if('speechSynthesis' in window)window.speechSynthesis.cancel();activeUtterance=null;speaking=false;$('avatar').classList.remove('speaking');$('avatarState').textContent='AI Interviewer'}
-function speak(){
-  if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window)){
-    message('この端末では音声読み上げを利用できません。質問を画面でご確認ください。');return;
-  }
-  stopSpeech();const token=voiceToken;refreshVoices();
-  const u=new SpeechSynthesisUtterance(questions[index]);activeUtterance=u;
-  u.lang='ja-JP';u.rate=.88;u.pitch=1;u.volume=1;
-  const japanese=voiceList.filter(v=>/^ja(?:-|_)/i.test(v.lang));
-  if(japanese.length)u.voice=japanese.find(v=>v.localService)||japanese[0];
-  u.onstart=()=>{if(token!==voiceToken)return;speaking=true;$('avatar').classList.add('speaking');$('avatarState').textContent='質問を読み上げています';$('soundHelp').hidden=true};
-  const done=()=>{if(token!==voiceToken)return;speaking=false;$('avatar').classList.remove('speaking');$('avatarState').textContent='AI Interviewer';activeUtterance=null};
-  u.onend=()=>{done();if(token===voiceToken && !$('interview').classList.contains('hidden'))begin()};u.onerror=e=>{done();$('soundHelp').hidden=false;message('音声を再生できません。🔊「音声を再生」を押してください。')};
-  try{window.speechSynthesis.speak(u);window.speechSynthesis.resume();}catch(e){done();$('soundHelp').hidden=false}
-  // Some mobile engines silently block background speech; provide manual replay.
-  $('soundHelp').hidden=false;
+const $=id=>document.getElementById(id);
+let candidateName='',index=0,answers=Array(questions.length).fill(''),recognition=null,recording=false,micSession=0,recognitionBase='',recognitionFinal='',cameraStream=null;
+const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+function micLabel(){ $('mic').textContent=recording?'■ マイク OFF':'🎤 マイク ON';$('mic').setAttribute('aria-pressed',String(recording));}
+function stopMic(){recording=false;micSession++;const r=recognition;recognition=null;if(r){try{r.abort()}catch(e){}}micLabel()}
+function startRecognition(session){
+ if(!recording||session!==micSession||!SpeechRecognition)return;
+ const r=new SpeechRecognition();recognition=r;r.lang='ja-JP';r.continuous=true;r.interimResults=true;
+ recognitionBase=$('answer').value.trim();recognitionFinal='';
+ r.onresult=e=>{if(!recording||session!==micSession||recognition!==r)return;let interim='';for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)recognitionFinal+=(recognitionFinal?' ':'')+t;else interim+=t} $('answer').value=[recognitionBase,recognitionFinal,interim].filter(Boolean).join(' ');answers[index]=$('answer').value};
+ r.onerror=e=>{if(session!==micSession)return;if(['not-allowed','service-not-allowed','audio-capture'].includes(e.error)){stopMic();$('status').textContent='マイクを使用できません。許可を確認するか、文字で回答してください。'}else if(e.error!=='aborted'){$('status').textContent='音声入力を再接続しています…'}};
+ r.onend=()=>{if(recognition!==r||session!==micSession)return;recognition=null;if(recording){const saved=$('answer').value.trim();answers[index]=saved;setTimeout(()=>{if(recording&&session===micSession)startRecognition(session)},250)}};
+ try{r.start();$('status').textContent='🎤 マイクON：OFFを押すまで音声入力を続けます。'}catch(e){stopMic();$('status').textContent='マイクを起動できません。文字で入力してください。'}
 }
-function stopListening(){listening=false;if(recognition){try{recognition.stop()}catch(e){}}$('micStatus').textContent='⚪ マイク待機中'}
-function startClock(){stopClock();tick=setInterval(()=>{remaining=Math.max(0,remaining-1);updateClock();if(remaining===0){save();stopClock();stopListening();if($('autoNext').checked)nextQuestion();else message('時間終了です。「次の質問へ」を押してください。')}},1000)}
-function showQuestion(){stopClock();stopListening();stopSpeech();remaining=Number($('duration').value);updateClock();$('counter').textContent=`質問 ${index+1} / ${questions.length}`;$('question').textContent=questions[index];$('answer').value=answers[index];finalText=answers[index];interimText='';$('next').textContent=index===questions.length-1?'結果を見る →':'次の質問へ →';startClock();}
-function begin(){if(listening)return;listening=true;$('micStatus').textContent='🟢 マイク認識';if(Recognition){recognition=new Recognition();recognition.lang='ja-JP';recognition.continuous=true;recognition.interimResults=true;recognition.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){let part=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=(finalText?' ':'')+part;else interim+=part}interimText=interim;$('answer').value=finalText+(interim?' '+interim:'')};recognition.onerror=e=>{message('音声認識: '+e.error+'。必要なら回答欄に直接入力してください。');if(e.error==='not-allowed'||e.error==='service-not-allowed')stopListening()};const thisRecognition=recognition;recognition.onend=()=>{if(listening && recognition===thisRecognition){try{thisRecognition.start()}catch(e){}}};try{recognition.start()}catch(e){message('マイクを起動できませんでした。手入力できます。')}}else{message('このブラウザは音声認識に対応していません。Chromeで試すか手入力してください。')}
-}
-function save(){answers[index]=$('answer').value.trim();finalText=answers[index]}
-function nextQuestion(){save();stopClock();stopListening();stopSpeech();if(index<questions.length-1){index++;showQuestion();speak()}else showResults()}
-function showResults(){stopClock();$('interview').classList.add('hidden');$('results').classList.remove('hidden');$('resultList').replaceChildren();questions.forEach((q,i)=>{let div=document.createElement('div');div.className='result-item';let h=document.createElement('h3');h.textContent=`${i+1}. ${q}`;let p=document.createElement('p');p.textContent=answers[i]||'（回答なし）';div.append(h,p);$('resultList').append(div)})}
-$('repeat').onclick=speak;$('soundHelp').onclick=speak;$('next').onclick=nextQuestion;$('answer').addEventListener('input',()=>{finalText=$('answer').value;answers[index]=finalText});$('duration').onchange=()=>{remaining=Number($('duration').value);updateClock();startClock()};
-$('cameraQuick').onclick=()=> $('cameraBtn').click();$('cameraBtn').onclick=async()=>{if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;$('camera').srcObject=null;$('cameraBtn').textContent='📷 カメラをオン';return}try{stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});$('camera').srcObject=stream;$('cameraBtn').textContent='📷 カメラをオフ'}catch(e){message('カメラにアクセスできません。HTTPS または localhost で開き、カメラを許可してください。')}};
-$('export').onclick=()=>{let content=questions.map((q,i)=>`${i+1}. ${q}\n${answers[i]||'（回答なし）'}`).join('\n\n');let blob=new Blob(['\ufeff'+content],{type:'text/plain;charset=utf-8'});let url=URL.createObjectURL(blob);let a=document.createElement('a');a.href=url;a.download='interview-answers.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
-$('restart').onclick=()=>{index=0;answers=Array(15).fill('');$('results').classList.add('hidden');$('interview').classList.remove('hidden');showQuestion();speak()};window.addEventListener('beforeunload',()=>{stopSpeech();if(stream)stream.getTracks().forEach(t=>t.stop())});
-$('launch').onclick=()=>{const name=$('candidateName').value.trim();if(!name){$('introError').textContent='お名前を入力してください。';$('candidateName').focus();return}if(!$('consent').checked){$('introError').textContent='同意のチェックを入れてください。';return}$('introError').textContent='';$('intro').classList.add('hidden');$('interview').classList.remove('hidden');showQuestion();speak();$('cameraBtn').click();};
+function toggleMic(){if(recording){stopMic();$('status').textContent='マイクをOFFにしました。';return}if(!SpeechRecognition){$('status').textContent='このブラウザは音声入力に対応していません。文字で入力してください。';return}recording=true;micSession++;micLabel();startRecognition(micSession)}
+function stopVoice(){if('speechSynthesis' in window)speechSynthesis.cancel()}
+function speak(){stopVoice();if(!('speechSynthesis' in window)){$('status').textContent='音声再生に対応していません。質問を読んでください。';return}const u=new SpeechSynthesisUtterance(questions[index]);u.lang='ja-JP';u.rate=.9;try{speechSynthesis.speak(u)}catch(e){$('status').textContent='音声を再生できませんでした。'}}
+function showQuestion(){stopVoice();$('count').textContent=`質問 ${index+1} / ${questions.length}`;$('bar').style.width=`${(index+1)/questions.length*100}%`;$('question').textContent=questions[index];$('answer').value=answers[index];$('next').textContent=index===questions.length-1?'回答を確認 →':'次の質問 →';$('status').textContent=recording?'🎤 マイクON：音声入力を続けています。':'声で答える場合はマイクONを押してください。'}
+$('start').onclick=()=>{const name=$('candidateName').value.trim();if(!name){$('nameError').hidden=false;$('candidateName').focus();return}candidateName=name;$('nameError').hidden=true;$('candidateLabel').textContent=name+' さん';$('welcome').hidden=true;$('practice').hidden=false;showQuestion();speak()};
+$('candidateName').addEventListener('input',()=>{$('nameError').hidden=!!$('candidateName').value.trim()});$('candidateName').addEventListener('keydown',e=>{if(e.key==='Enter')$('start').click()});
+$('speak').onclick=speak;
+$('mic').onclick=toggleMic;
+async function toggleCamera(){if(cameraStream){stopCamera();return}if(!navigator.mediaDevices?.getUserMedia){$('status').textContent='このブラウザではカメラを使えません。';return}try{cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});$('cameraPreview').srcObject=cameraStream;$('cameraPreview').hidden=false;$('camera').textContent='📷 カメラ OFF';$('camera').setAttribute('aria-pressed','true')}catch(e){$('status').textContent='カメラを利用できません。ブラウザの許可を確認してください。'}}
+function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}$('cameraPreview').srcObject=null;$('cameraPreview').hidden=true;$('camera').textContent='📷 カメラ ON';$('camera').setAttribute('aria-pressed','false')}
+$('camera').onclick=toggleCamera;
+function switchQuestion(){if(recording){const r=recognition;recognition=null;if(r)try{r.abort()}catch(e){};if(recording)startRecognition(micSession)}}
+$('answer').oninput=()=>{answers[index]=$('answer').value};
+$('next').onclick=()=>{answers[index]=$('answer').value.trim();stopVoice();if(index<questions.length-1){index++;showQuestion();switchQuestion();speak()}else{stopMic();stopCamera();showResults()}};
+function showResults(){$('resultName').textContent='お名前：'+candidateName;$('practice').hidden=true;$('finish').hidden=false;$('results').replaceChildren();questions.forEach((q,i)=>{const div=document.createElement('div');div.className='result';const title=document.createElement('strong');title.textContent=`${i+1}. ${q}`;const p=document.createElement('p');p.textContent=answers[i]||'（回答なし）';div.append(title,p);$('results').append(div)})}
+$('download').onclick=()=>{const text='お名前：'+candidateName+'\n\n'+questions.map((q,i)=>`${i+1}. ${q}\n${answers[i]||'（回答なし）'}`).join('\n\n');const url=URL.createObjectURL(new Blob(['\ufeff'+text],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='面接練習_回答.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+function returnHome(){stopMic();stopCamera();stopVoice();index=0;answers=Array(questions.length).fill('');$('finish').hidden=true;$('practice').hidden=true;$('welcome').hidden=false;$('candidateName').value='';$('nameError').hidden=true;candidateName='';}
+$('quit').onclick=returnHome;
+$('finishEarly').onclick=()=>{answers[index]=$('answer').value.trim();stopMic();stopCamera();stopVoice();showResults()};
+$('again').onclick=returnHome;
+window.addEventListener('beforeunload',()=>{stopMic();stopCamera();stopVoice()});

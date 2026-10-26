@@ -1,0 +1,60 @@
+/* Stable camera slot: switching camera on/off never changes page geometry. */
+#practice{min-height:0;overflow:hidden;display:flex;flex-direction:column}
+#practice[hidden]{display:none!important}
+.work{flex:1;min-height:0;overflow:hidden;grid-template-columns:minmax(220px,31%) minmax(0,1fr);padding-top:18px;padding-bottom:18px}
+.interviewer{min-height:0;overflow:hidden;justify-content:flex-start;gap:5px;padding:12px}
+.interviewer img{flex:0 1 auto;min-height:0;max-height:clamp(85px,18vh,160px);width:100%;object-fit:contain}
+.interviewer .camera-wrap{flex:0 0 auto;min-height:0;margin-top:6px;gap:6px}
+.camera-wrap video{display:block!important;width:min(100%,220px);height:clamp(78px,13vh,120px);flex:none;object-fit:cover;border-radius:12px;background:#202c48}
+.camera-wrap video[hidden]{visibility:hidden!important;display:block!important}
+.camera-wrap button{flex:none;margin:0}
+.answer-area{min-height:0;overflow:hidden}
+.answer-area h2{min-height:0;margin:9px 0 16px}
+.answer-area textarea{min-height:70px;flex:1}
+.answer-area .actions{flex:none}
+#status{flex:none}
+@media(max-width:700px){
+  .work{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:9px;padding:9px 13px}
+  .interviewer{display:grid;grid-template-columns:56px minmax(0,1fr) 112px;grid-template-rows:26px 24px 35px;align-items:center;gap:2px 7px;padding:7px;min-height:0}
+  .interviewer img{grid-column:1;grid-row:1/4;width:55px;height:74px;min-height:0;max-height:74px}
+  .interviewer b{grid-column:2;grid-row:1;font-size:13px}
+  .interviewer small{grid-column:2;grid-row:2;font-size:10px}
+  .interviewer #speak{grid-column:2;grid-row:3;padding:7px 6px;font-size:11px;margin:0;justify-self:start}
+  .interviewer .camera-wrap{grid-column:3;grid-row:1/4;display:flex;flex-direction:column;gap:3px;margin:0;width:112px}
+  .camera-wrap video{width:112px;height:58px}
+  .camera-wrap button{padding:5px 7px;font-size:10px}
+  .answer-area h2{font-size:17px;margin:4px 0 8px}
+  .answer-area textarea{min-height:60px}
+  .answer-area .actions{margin-top:7px}
+}
+@media(max-height:650px) and (min-width:701px){.progress-head{padding-top:12px;padding-bottom:8px}.work{padding-top:10px;padding-bottom:8px}.interviewer img{max-height:90px}.camera-wrap video{height:75px}.answer-area h2{margin:5px 0 8px}.actions{margin-top:8px}}
+
+/* Larger, stable camera preview, with no reflow on camera toggle */
+@media (min-width:701px){
+ .work{grid-template-columns:minmax(290px,34%) minmax(0,1fr);gap:18px}
+ .interviewer{padding:10px;gap:4px}
+ .interviewer img{max-height:clamp(65px,12vh,112px)}
+ .interviewer #speak{padding:9px 15px;margin-top:4px}
+ .interviewer .camera-wrap{width:100%;margin-top:5px}
+ .camera-wrap video{width:min(100%,330px);height:clamp(140px,23vh,205px);object-fit:cover;object-position:center 42%}
+ .camera-wrap button{padding:9px 15px}
+}
+@media (max-width:700px){
+ .interviewer{grid-template-columns:52px minmax(0,1fr) 150px;grid-template-rows:28px 24px 42px;gap:3px 5px}
+ .interviewer .camera-wrap{width:150px}
+ .camera-wrap video{width:150px;height:76px;object-fit:cover;object-position:center 40%}
+ .camera-wrap button{padding:4px 6px;font-size:10px}
+}
+@media (max-width:390px){
+ .interviewer{grid-template-columns:43px minmax(0,1fr) 125px}
+ .interviewer .camera-wrap{width:125px}
+ .camera-wrap video{width:125px;height:72px}
+}
+
+/* Compact actions: finish or quit without changing the one-page layout */
+.answer-area .actions{flex-wrap:wrap;align-items:center}
+.answer-area .actions button{white-space:nowrap}
+#quit{color:#8c4c58;border-color:#eed8dd}
+#finishEarly{color:#385e83;border-color:#d5e4f1}
+@media(max-width:1050px){.answer-area .actions{gap:7px}.answer-area .actions button{font-size:12px;padding:10px 12px}}
+@media(max-width:700px){.answer-area .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.answer-area .actions button{min-width:0;padding:9px 5px;font-size:11px}}
