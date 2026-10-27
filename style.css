@@ -5,3 +5,8 @@
 .camera-wrap{display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;margin-top:5px}.camera-wrap video{width:100%;max-width:220px;height:115px;object-fit:cover;border-radius:12px;background:#192238;transform:scaleX(-1)}.camera-wrap button{margin-top:0}.interviewer img{max-height:23vh}@media(max-width:700px){.camera-wrap{grid-column:1/-1;flex-direction:row;justify-content:center}.camera-wrap video{width:88px;height:60px}.camera-wrap button{font-size:11px;padding:8px}.interviewer{grid-template-columns:64px 1fr auto}.interviewer img{max-height:65px}}
 
 .name-entry{display:flex;flex-direction:column;gap:5px;margin:12px 0;max-width:350px}.name-entry label{font-weight:750;font-size:14px}.name-entry label span{color:#c63748}.name-entry input{width:100%;font:inherit;border:1.5px solid #dce4f3;border-radius:12px;padding:11px 13px;outline:none}.name-entry input:focus{border-color:#697ae5;box-shadow:0 0 0 3px #6175dc19}.name-entry small{color:#b42336;font-size:12px}.name-entry small[hidden]{display:none}.candidate-label,.result-name{font-size:13px;font-weight:750;color:#4e63d9}.result-name{margin-bottom:6px}@media(max-width:700px){.name-entry{margin:8px auto;max-width:290px;text-align:left}.name-entry input{padding:9px 11px}.name-entry label{font-size:12px}.progress-head{gap:8px;flex-wrap:wrap}}
+
+/* Question countdown, without changing existing layout */
+.interview-timer{font-weight:800!important;font-size:17px!important;color:#4059c9!important;font-variant-numeric:tabular-nums;background:#edf2ff;border-radius:10px;padding:5px 10px}
+.interview-timer.is-low{color:#b42336!important;background:#fff0f0}
+@media(max-width:700px){.interview-timer{font-size:14px!important;padding:3px 7px}}
